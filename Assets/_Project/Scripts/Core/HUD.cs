@@ -1,5 +1,6 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
 /// <summary>
@@ -21,7 +22,10 @@ public class HUD : MonoBehaviour
 
     private void Awake()
     {
-        EnsureGameOverMenu();
+        if (SceneManager.GetActiveScene().name != "Before")
+        {
+            EnsureGameOverMenu();
+        }
     }
 
     private void OnEnable()

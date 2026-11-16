@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.SceneManagement;
 
 /// <summary>
 /// Skor, can ve combo sayacı. Tek sahnelik bir proje olduğu için basit singleton yeterli.
@@ -22,6 +23,7 @@ public class GameManager : MonoBehaviour
     public int Combo { get; private set; }
 
     private bool waitingForNextRound;
+    private bool isBaselineBeforeScene;
 
     private void Awake()
     {
@@ -31,6 +33,8 @@ public class GameManager : MonoBehaviour
             return;
         }
         Instance = this;
+
+        isBaselineBeforeScene = SceneManager.GetActiveScene().name == "Before";
 
         if (ball == null)
             ball = FindAnyObjectByType<Ball>();
@@ -54,7 +58,7 @@ public class GameManager : MonoBehaviour
 
     private void Update()
     {
-        if (IsGameOver || !waitingForNextRound) return;
+        if (isBaselineBeforeScene || IsGameOver || !waitingForNextRound) return;
         if (ball == null || levelBuilder == null) return;
 
         // Top engel (tuğla) bölgesinden tamamen çıktıktan sonra yeni turu başlat
@@ -66,7 +70,7 @@ public class GameManager : MonoBehaviour
 
     private void OnBrickDestroyed(ImpactInfo info)
     {
-        if (levelBuilder == null) return;
+        if (isBaselineBeforeScene || levelBuilder == null) return;
 
         int remaining = levelBuilder.RegisterBrickDestroyed();
         if (remaining <= 0)
@@ -103,6 +107,18 @@ public class GameManager : MonoBehaviour
 
         if (Lives <= 0)
         {
+            if (isBaselineBeforeScene)
+            {
+                Lives = startingLives;
+                Score = 0;
+                GameEvents.RaiseScoreChanged(Score);
+                GameEvents.RaiseLivesChanged(Lives);
+                GameEvents.RaiseBallLost();
+                if (ball != null)
+                    ball.Launch();
+                return;
+            }
+
             Lives = 0;
             IsGameOver = true;
             waitingForNextRound = false;
