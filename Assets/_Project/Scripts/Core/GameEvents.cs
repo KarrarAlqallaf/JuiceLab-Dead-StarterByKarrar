@@ -14,13 +14,17 @@ public static class GameEvents
     public static event Action BallLost;
     public static event Action<int> ScoreChanged;
     public static event Action<int> LivesChanged;
+    public static event Action GameOver;
+    public static event Action GameRestarted;
 
-    public static void RaiseBallHitPaddle(ImpactInfo info) => BallHitPaddle?.Invoke(info);
-    public static void RaiseBallHitWall(ImpactInfo info)   => BallHitWall?.Invoke(info);
+    public static void RaiseBallHitPaddle(ImpactInfo info)  => BallHitPaddle?.Invoke(info);
+    public static void RaiseBallHitWall(ImpactInfo info)    => BallHitWall?.Invoke(info);
     public static void RaiseBrickDestroyed(ImpactInfo info) => BrickDestroyed?.Invoke(info);
-    public static void RaiseBallLost()                     => BallLost?.Invoke();
-    public static void RaiseScoreChanged(int score)        => ScoreChanged?.Invoke(score);
-    public static void RaiseLivesChanged(int lives)        => LivesChanged?.Invoke(lives);
+    public static void RaiseBallLost()                      => BallLost?.Invoke();
+    public static void RaiseScoreChanged(int score)         => ScoreChanged?.Invoke(score);
+    public static void RaiseLivesChanged(int lives)         => LivesChanged?.Invoke(lives);
+    public static void RaiseGameOver()                      => GameOver?.Invoke();
+    public static void RaiseGameRestarted()                 => GameRestarted?.Invoke();
 
     /// <summary>
     /// Statik olaylar sahne yeniden yüklendiğinde kendiliğinden temizlenmez.
@@ -37,5 +41,7 @@ public static class GameEvents
         BallLost = null;
         ScoreChanged = null;
         LivesChanged = null;
+        GameOver = null;
+        GameRestarted = null;
     }
 }

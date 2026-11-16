@@ -9,13 +9,19 @@ public class GameManager : MonoBehaviour
     public static GameManager Instance { get; private set; }
 
     [SerializeField] private Ball ball;
+    [SerializeField] private LevelBuilder levelBuilder;
     [SerializeField] private int startingLives = 3;
+    [SerializeField] private float speedIncreasePerRound = 1.2f;
 
     public int Score { get; private set; }
     public int Lives { get; private set; }
+    public int Round { get; private set; } = 1;
+    public bool IsGameOver { get; private set; }
 
     /// <summary>Rakete değmeden arka arkaya kırılan tuğla sayısı.</summary>
     public int Combo { get; private set; }
+
+    private bool waitingForNextRound;
 
     private void Awake()
     {
@@ -26,7 +32,55 @@ public class GameManager : MonoBehaviour
         }
         Instance = this;
 
+        if (ball == null)
+            ball = FindAnyObjectByType<Ball>();
+        if (levelBuilder == null)
+            levelBuilder = FindAnyObjectByType<LevelBuilder>();
+
         Lives = startingLives;
+        Round = 1;
+        IsGameOver = false;
+    }
+
+    private void OnEnable()
+    {
+        GameEvents.BrickDestroyed += OnBrickDestroyed;
+    }
+
+    private void OnDisable()
+    {
+        GameEvents.BrickDestroyed -= OnBrickDestroyed;
+    }
+
+    private void Update()
+    {
+        if (IsGameOver || !waitingForNextRound) return;
+        if (ball == null || levelBuilder == null) return;
+
+        // Top engel (tuğla) bölgesinden tamamen çıktıktan sonra yeni turu başlat
+        if (levelBuilder.IsBallOutsideObstacleZone(ball.transform.position))
+        {
+            StartNextRound();
+        }
+    }
+
+    private void OnBrickDestroyed(ImpactInfo info)
+    {
+        if (levelBuilder == null) return;
+
+        int remaining = levelBuilder.RegisterBrickDestroyed();
+        if (remaining <= 0)
+        {
+            waitingForNextRound = true;
+        }
+    }
+
+    private void StartNextRound()
+    {
+        waitingForNextRound = false;
+        Round++;
+        levelBuilder.Build();
+        ball.IncreaseSpeed(speedIncreasePerRound);
     }
 
     public void AddScore(int amount)
@@ -42,19 +96,54 @@ public class GameManager : MonoBehaviour
 
     public void OnBallLost()
     {
+        if (IsGameOver) return;
+
         Lives--;
         ResetCombo();
 
         if (Lives <= 0)
         {
-            Lives = startingLives;
-            Score = 0;
-            GameEvents.RaiseScoreChanged(Score);
+            Lives = 0;
+            IsGameOver = true;
+            waitingForNextRound = false;
+
+            GameEvents.RaiseLivesChanged(Lives);
+            GameEvents.RaiseBallLost();
+
+            if (ball != null)
+                ball.Stop();
+
+            GameEvents.RaiseGameOver();
+            return;
         }
 
         GameEvents.RaiseLivesChanged(Lives);
         GameEvents.RaiseBallLost();
 
-        ball.Launch();
+        if (ball != null)
+            ball.Launch();
+    }
+
+    public void RestartGame()
+    {
+        IsGameOver = false;
+        waitingForNextRound = false;
+        Lives = startingLives;
+        Score = 0;
+        Combo = 0;
+        Round = 1;
+
+        if (levelBuilder != null)
+            levelBuilder.Build();
+
+        if (ball != null)
+        {
+            ball.ResetSpeed();
+            ball.Launch();
+        }
+
+        GameEvents.RaiseScoreChanged(Score);
+        GameEvents.RaiseLivesChanged(Lives);
+        GameEvents.RaiseGameRestarted();
     }
 }

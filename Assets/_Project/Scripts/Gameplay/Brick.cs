@@ -11,6 +11,7 @@ public class Brick : MonoBehaviour
     [SerializeField] private int scoreValue = 10;
 
     private SpriteRenderer spriteRenderer;
+    private bool isDestroyed;
 
     private void Awake()
     {
@@ -19,6 +20,7 @@ public class Brick : MonoBehaviour
 
     private void OnCollisionEnter2D(Collision2D collision)
     {
+        if (isDestroyed) return;
         if (!collision.gameObject.TryGetComponent(out Ball _)) return;
 
         ContactPoint2D contact = collision.GetContact(0);
@@ -30,6 +32,7 @@ public class Brick : MonoBehaviour
         hitPoints--;
         if (hitPoints > 0) return;
 
+        isDestroyed = true;
         GameManager.Instance.AddScore(scoreValue);
 
         Color color = spriteRenderer != null ? spriteRenderer.color : Color.white;

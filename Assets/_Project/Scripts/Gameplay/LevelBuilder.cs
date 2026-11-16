@@ -17,6 +17,8 @@ public class LevelBuilder : MonoBehaviour
     [Header("Renkler")]
     [SerializeField] private Color[] rowColors;
 
+    public int RemainingBricks { get; private set; }
+
     private void Start()
     {
         Build();
@@ -24,12 +26,16 @@ public class LevelBuilder : MonoBehaviour
 
     public void Build()
     {
+        ClearBricks();
+
         float stepX = brickSize.x + spacing.x;
         float stepY = brickSize.y + spacing.y;
 
         // Izgarayı ekranda ortalamak için toplam genişliğin yarısı kadar sola kaydır.
         float totalWidth = columns * stepX - spacing.x;
         float startX = -totalWidth * 0.5f + brickSize.x * 0.5f;
+
+        RemainingBricks = 0;
 
         for (int row = 0; row < rows; row++)
         {
@@ -43,6 +49,7 @@ public class LevelBuilder : MonoBehaviour
                 Brick brick = Instantiate(brickPrefab, pos, Quaternion.identity, transform);
                 brick.name = $"Brick_r{row}_c{col}";
                 brick.transform.localScale = new Vector3(brickSize.x, brickSize.y, 1f);
+                RemainingBricks++;
 
                 if (rowColors.Length > 0 && brick.TryGetComponent(out SpriteRenderer sr))
                 {
@@ -56,5 +63,35 @@ public class LevelBuilder : MonoBehaviour
                 }
             }
         }
+    }
+
+    public void ClearBricks()
+    {
+        for (int i = transform.childCount - 1; i >= 0; i--)
+        {
+            Transform child = transform.GetChild(i);
+            if (child != null)
+            {
+                Destroy(child.gameObject);
+            }
+        }
+        RemainingBricks = 0;
+    }
+
+    public int RegisterBrickDestroyed()
+    {
+        RemainingBricks = Mathf.Max(0, RemainingBricks - 1);
+        return RemainingBricks;
+    }
+
+    /// <summary>
+    /// Topun tuğla (engel) bölgesinden tamamen çıkıp çıkmadığını kontrol eder.
+    /// Top en alt tuğla sırasının altına indiğinde yeni tuğlalar güvenle oluşturulabilir.
+    /// </summary>
+    public bool IsBallOutsideObstacleZone(Vector2 ballPosition, float safetyMargin = 0.6f)
+    {
+        float stepY = brickSize.y + spacing.y;
+        float bottomEdgeY = topY - (rows - 1) * stepY - brickSize.y * 0.5f;
+        return ballPosition.y < (bottomEdgeY - safetyMargin);
     }
 }

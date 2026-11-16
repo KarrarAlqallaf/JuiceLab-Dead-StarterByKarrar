@@ -32,6 +32,9 @@ public class Paddle : MonoBehaviour
 
     private void Update()
     {
+        if (GameManager.Instance != null && GameManager.Instance.IsGameOver)
+            return;
+
         float targetX = Mathf.Clamp(GetTargetX(), -xLimit, xLimit);
 
         Vector3 pos = transform.position;

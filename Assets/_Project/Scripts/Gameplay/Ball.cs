@@ -19,11 +19,13 @@ public class Ball : MonoBehaviour
 
     private Rigidbody2D rb;
     private Vector2 startPosition;
+    private float baseSpeed;
 
     private void Awake()
     {
         rb = GetComponent<Rigidbody2D>();
         startPosition = transform.position;
+        baseSpeed = speed;
     }
 
     private void Start()
@@ -34,11 +36,40 @@ public class Ball : MonoBehaviour
     /// <summary>Topu başlangıç noktasına alıp yukarı doğru rastgele bir açıyla fırlatır.</summary>
     public void Launch()
     {
+        if (!gameObject.activeSelf)
+            gameObject.SetActive(true);
+
         transform.position = startPosition;
 
         float angle = Random.Range(-45f, 45f);
         Vector2 dir = Quaternion.Euler(0f, 0f, angle) * Vector2.up;
         rb.linearVelocity = dir * speed;
+    }
+
+    /// <summary>Oyun bittiğinde topu durdurur ve gizler.</summary>
+    public void Stop()
+    {
+        if (rb != null)
+            rb.linearVelocity = Vector2.zero;
+
+        transform.position = startPosition;
+        gameObject.SetActive(false);
+    }
+
+    /// <summary>Yeni turda topun hızını biraz artırır.</summary>
+    public void IncreaseSpeed(float amount)
+    {
+        speed += amount;
+        if (rb != null && rb.linearVelocity.sqrMagnitude > 0.0001f)
+        {
+            rb.linearVelocity = rb.linearVelocity.normalized * speed;
+        }
+    }
+
+    /// <summary>Yeniden başlatmada top hızını başlangıç değerine döndürür.</summary>
+    public void ResetSpeed()
+    {
+        speed = baseSpeed;
     }
 
     private void FixedUpdate()
